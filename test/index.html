@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <style>
+        html,
+        body {
+            background: #000;
+        }
+
+        canvas {
+            display: block;
+            margin: 10px auto;
+            border-radius: 2px;
+            border: 1px solid #555;
+            background-color: #222;
+        }
+    </style>
+    <canvas width="600" height="400"></canvas>
+
+    <script>
+        const canvas = document.querySelector("canvas");
+        const context = canvas.getContext("2d");
+
+        const drawVectors = (object = {}) => {
+            context.save();
+
+            context.strokeStyle = "red";
+            context.beginPath();
+            context.moveTo(object.position.x, object.position.y);
+            context.lineTo(canvas.width, object.position.y);
+
+            context.moveTo(object.position.x, object.position.y + object.size.height);
+            context.lineTo(canvas.width, object.position.y + object.size.height);
+            context.stroke();
+            context.closePath();
+
+            context.strokeStyle = "yellow";
+            context.beginPath();
+            context.moveTo(object.position.x, object.position.y);
+            context.lineTo(object.position.x, canvas.height);
+            context.moveTo(object.position.x + object.size.width, object.position.y);
+            context.lineTo(object.position.x + object.size.width, canvas.height);
+
+            context.stroke();
+            context.closePath();
+
+            context.restore();
+        }
+        class GameObject {
+            position = { x: 0, y: 0 };
+            size = { width: 0, height: 0 };
+
+            constructor(x, y, w, h) {
+                this.setSize(w, h);
+                this.setPosition(x, y);
+            }
+
+            setSize(width = 0, height = 0) {
+                this.size.width = width;
+                this.size.height = height;
+
+                return this;
+            }
+
+            setPosition(x = 0, y = 0) {
+                this.position.x = x;
+                this.position.y = y;
+
+                return this;
+            }
+
+            static create(x, y, w, h) {
+                return new GameObject(x, y, w, h);
+            }
+
+            static isGameObject(object) {
+                return object instanceof GameObject;
+            }
+
+            draw() {
+                drawVectors(this)
+                context.save();
+                context.fillStyle = "#555";
+                context.beginPath();
+                context.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
+                context.closePath();
+                context.restore();
+            }
+
+            update() { }
+        }
+
+        class Player extends GameObject {
+            velocity = { x: 0, y: 0 };
+            direction = { x: 0, y: 0 };
+            gravity = .5;
+            isJumping = false;
+
+            oldPosition = { x: 0, y: 0 };
+
+            states = [];
+
+            constructor(x, y, w, h) {
+                super(x, y, w, h);
+            }
+
+            startJump() {
+                if (!this.isJumping) {
+                    this.isJumping = true;
+                    this.velocity.y -= 4;
+                }
+                return this;
+            }
+
+            moveUp() {
+                this.states.push("up");
+
+                return this;
+            }
+
+            moveDown() {
+                this.states.push("down");
+
+                return this;
+            }
+
+            moveRight() {
+                this.states.push("right");
+
+                return this;
+            }
+
+            moveLeft() {
+                this.states.push("left");
+
+
+                return this;
+            }
+
+            isCollide(object) {
+                return (
+                    this.position.x + this.size.width >= object.position.x &&
+                    object.position.x + object.size.width >= this.position.x &&
+                    this.position.y + this.size.height >= object.position.y &&
+                    object.position.y + object.size.height >= this.position.y
+                );
+            }
+
+            update(deltaTime) {
+                deltaTime /= 60;
+
+                this.velocity.y = (this.direction.y - this.position.y) * deltaTime;
+                this.velocity.x = (this.direction.x - this.position.x) * deltaTime;
+
+                for (let object of objects) {
+                    if (this.isCollide(object)) {
+                        let oldLeft = this.oldPosition.x;
+                        let oldRight = this.oldPosition.x + this.size.width;
+                        let oldTop = this.oldPosition.y;
+                        let oldBottom = this.oldPosition.y + this.size.height;
+
+                        let left = this.position.x;
+                        let right = this.position.x + this.size.width;
+                        let top = this.position.y;
+                        let bottom = this.position.y + this.size.height;
+
+                        if (oldRight < object.position.x && right >= object.position.x) {
+                            console.log("RIGHT COLLISION!")
+                            // player.velocity.x = 0;
+                            // player.direction.x = player.position.x;
+                        }
+
+                        if (oldBottom < object.position.y && bottom >= object.position.y) {
+                            console.log("TOP COLLISION!")
+                        }
+
+                        if (oldLeft >= object.position.x + object.size.width && left < object.position.x + object.size.width) {
+                            console.log("LEFT COLLISION!")
+                        }
+
+                        if (oldTop >= object.position.y + object.size.height && top < object.position.y + object.size.height) {
+                            console.log("BOTTOM COLLISION!")
+                        }
+
+                        // if (oldRight < object.position.x && right >= object.position.x) {
+                        //     console.log("RIGHT COLLISION!")
+                        // }
+
+                        // if (oldRight < object.position.x && right >= object.position.x) {
+                        //     console.log("RIGHT COLLISION!")
+                        // }
+
+                        // let differenceX = ~~(this.direction.x - this.position.x);
+                        // let differenceY = ~~(this.direction.y - this.position.y);
+
+                        // if (this.velocity.y > 0 && this.position.y + this.size.height >= object.position.y) {
+                        //     console.log("Объект снизу");
+                        //     this.direction.y = this.position.y;
+                        //     this.velocity.y = 0;
+                        // }
+
+                        // if (this.velocity.y < 0 && this.position.y > object.position.y) {
+                        //     console.log("Объект сверху");
+                        //     this.direction.y = this.position.y;
+                        //     this.velocity.y = 0;
+                        // }
+
+                        // if (this.velocity.x > 0 && this.position.x < object.position.x) {
+                        //     this.direction.x = this.position.x;
+                        //     this.velocity.x = 0;
+                        //     console.log("Объект справа")
+                        // }
+
+                        // if (this.velocity.x < 0 && this.position.x > object.position.x) {
+                        //     this.direction.x = this.position.x;
+                        //     this.velocity.x = 0;
+                        //     console.log("Объект слево")
+                        // }
+                    }
+                }
+
+                this.oldPosition.x = this.position.x;
+                this.oldPosition.y = this.position.y;
+                this.position.y += this.velocity.y * .2;
+                this.position.x += this.velocity.x * .2;
+            }
+
+            draw() {
+                drawVectors(this);
+                context.save();
+                context.fillStyle = "steelBlue";
+                context.beginPath();
+                context.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
+                context.closePath();
+                context.restore();
+            }
+        }
+
+        const objects = [
+            GameObject.create(0, canvas.height - 100, canvas.width, 100),
+            GameObject.create(canvas.width - 150, canvas.height - 150, 50, 50),
+            GameObject.create(canvas.width - 450, canvas.height - 235, 100, 50)
+
+        ];
+
+        const player = new Player();
+        player.setSize(50, 50);
+        player.setPosition(canvas.width / 2, canvas.height / 2);
+
+
+        const update = (deltaTime) => {
+            player.update(deltaTime);
+        }
+
+        const drawInfo = () => {
+            let texts = [
+                `Position: x = ${player.position.x.toFixed(3)} y = ${player.position.y.toFixed(3)}`,
+                `Velocity: x = ${player.velocity.x.toFixed(3)} y = ${player.velocity.y.toFixed(3)}`,
+                `Direction: x = ${player.direction.x.toFixed(3)} y = ${player.direction.y.toFixed(3)}`
+            ];
+
+            context.font = "1.3em Arial";
+            context.fillStyle = "#fff";
+            for (let textIndex in texts) {
+                let text = texts[textIndex];
+                context.fillText(text, 10, 40 + (40 * textIndex));
+            }
+        }
+
+        const draw = () => {
+            // clear canvas
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            // draw objects 
+            for (let object of objects) {
+                object.draw();
+            }
+
+            // draw player
+            player.draw();
+
+            drawInfo();
+        }
+
+        let lastTime = 0;
+        let currentTime = Date.now();
+        let deltaTime = 0;
+        const animation = () => {
+            lastTime = currentTime;
+            currentTime = Date.now();
+            deltaTime = (currentTime - lastTime);
+
+            draw();
+            update(deltaTime);
+
+            requestAnimationFrame(animation);
+        }
+
+        window.onload = animation;
+        window.onkeydown = ({ keyCode }) => {
+            if (keyCode == 37) { // left
+                player.moveLeft();
+            }
+
+            if (keyCode == 38) { // left
+                player.moveUp();
+            }
+
+            if (keyCode == 39) { // right
+                player.moveRight();
+            }
+
+            if (keyCode == 40) { // down
+                player.moveDown();
+            }
+        }
+    </script>
+</body>
+
+</html>
